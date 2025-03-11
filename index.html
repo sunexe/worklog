@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的工作日志</title>
+    <style>
+        :root {
+            /* 极简主题的默认颜色 */
+            --bg-color: #ffffff;
+            --text-color: #2c3e50;
+            --card-bg: #ffffff;
+            --border-color: #e0e0e0;
+            --accent-color: #3498db;
+            --accent-hover: #2980b9;
+            --shadow-color: rgba(0, 0, 0, 0.05);
+            --input-bg: #f8f9fa;
+            --hover-bg: #f8f9fa;
+            --border-light: #eaeaea;
+            --text-secondary: #95a5a6;
+        }
+        
+        [data-theme="dark"] {
+            /* 暗黑主题的颜色 */
+            --bg-color: #1a1b1e;
+            --text-color: #e0e0e0;
+            --card-bg: #2d2f33;
+            --border-color: #3a3d42;
+            --accent-color: #3498db;
+            --accent-hover: #2980b9;
+            --shadow-color: rgba(0, 0, 0, 0.2);
+            --input-bg: #23252a;
+            --hover-bg: #3a3d42;
+            --border-light: #3a3d42;
+            --text-secondary: #aaa;
+        }
+        
+        /* 主题切换动画 */
+        * {
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s, box-shadow 0.3s;
+        }
+        
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            display: flex;
+            flex-direction: column;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+        
+        .main-content {
+            flex: 1;
+        }
+        
+        .container {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 40px;
+        }
+        
+        .left-panel {
+            width: 400px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .right-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .theme-switch {
+            position: relative;
+            width: 60px;
+            height: 30px;
+            background-color: var(--border-color);
+            border-radius: 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            padding: 0 5px;
+            justify-content: space-between;
+        }
+        
+        .theme-switch::before {
+            content: "";
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            background-color: var(--card-bg);
+            border-radius: 50%;
+            left: 3px;
+            transition: transform 0.3s;
+        }
+        
+        [data-theme="dark"] .theme-switch::before {
+            transform: translateX(30px);
+        }
+        
+        .theme-switch i {
+            color: var(--card-bg);
+            font-size: 14px;
+            z-index: 1;
+        }
+        
+        .calendar {
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background-color: var(--card-bg);
+            box-shadow: 0 1px 3px var(--shadow-color);
+        }
+        
+        .input-panel {
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            background-color: var(--card-bg);
+            box-shadow: 0 2px 4px var(--shadow-color);
+            display: none;
+            margin-left: 20px;
+        }
+        
+        .input-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 10px;
+        }
+        
+        .history {
+            width: 358px;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            background-color: var(--card-bg);
+            box-shadow: 0 2px 4px var(--shadow-color);
+            margin-top: 0;
+        }
+        
+        h1, h2 {
+            color: var(--accent-color);
+        }
+        
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            margin-top: 10px;
+            font-size: 15px;
+        }
+        
+        .calendar-weekday {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            padding: 8px;
+        }
+        
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .calendar-day {
+            padding: 8px;
+            text-align: center;
+            border: 1px solid var(--border-light);
+            cursor: pointer;
+            position: relative;
+            font-size: 15px;
+            color: var(--text-color);
+            transition: all 0.2s ease;
+        }
+        
+        .calendar-day:hover {
+            background-color: var(--hover-bg);
+            border-color: var(--accent-color);
+        }
+        
+        .calendar-day.has-content::after {
+            display: none;
+        }
+        
+        .calendar-day.has-content {
+            background-color: var(--hover-bg);
+            border-color: var(--accent-color);
+            font-weight: 500;
+        }
+        
+        .calendar-day.today {
+            background-color: var(--accent-color);
+            color: white;
+            font-weight: bold;
+            border-color: var(--accent-color);
+        }
+        
+        .report-content {
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background-color: var(--card-bg);
+            margin-left: 15px;
+            display: none;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        
+        .report-content pre {
+            white-space: pre-wrap;       /* 保留空格和换行，但允许自动换行 */
+            word-wrap: break-word;       /* 允许长单词断行 */
+            overflow-wrap: break-word;   /* 现代浏览器的长单词断行 */
+            margin: 0;                   /* 移除默认边距 */
+            font-family: inherit;        /* 使用与页面相同的字体 */
+        }
+        
+        .report-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 15px;
+        }
+        
+        .report-actions button {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .report-actions i {
+            font-size: 14px;
+        }
+        
+        .week-list {
+            max-height: 180px;
+            overflow-y: auto;
+            margin-top: 10px;
+            padding-right: 5px;
+        }
+        
+        /* 自定义滚动条样式 */
+        .week-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .week-list::-webkit-scrollbar-track {
+            background: var(--input-bg);
+            border-radius: 3px;
+        }
+        
+        .week-list::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 3px;
+        }
+        
+        .week-list::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-color);
+        }
+        
+        .week-item {
+            padding: 8px 10px;
+            border: 1px solid var(--border-color);
+            margin: 0 0 8px 0;
+            cursor: pointer;
+            background-color: var(--card-bg);
+            transition: all 0.3s ease;
+            border-radius: 4px;
+        }
+        
+        .week-item:hover {
+            background-color: var(--hover-bg);
+            border-color: var(--accent-color);
+        }
+        
+        .week-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+        }
+        
+        .week-item-title {
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+        
+        .week-item-time {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        label {
+            color: #ff8c00;
+            font-weight: bold;
+        }
+        
+        #modalDate {
+            color: #ff8c00;
+            border-bottom: 2px solid #ffe4b5;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        
+        textarea {
+            width: calc(100% - 15px);
+            height: 60px;
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid var(--border-light);
+            border-radius: 4px;
+            resize: vertical;
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #ff8c00;
+            box-shadow: 0 0 5px rgba(255, 140, 0, 0.3);
+        }
+        
+        button {
+            background-color: var(--accent-color);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+            transition: all 0.2s ease;
+            font-size: 15px;
+        }
+        
+        button:hover {
+            background-color: var(--accent-hover);
+            transform: translateY(-1px);
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            border-top: 1px solid var(--border-light);
+            margin-top: auto;
+        }
+        
+        .footer a {
+            color: var(--accent-color);
+            text-decoration: none;
+        }
+        
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        
+        /* 周报标题样式 */
+        .report-title {
+            white-space: nowrap;
+            margin-bottom: 20px;
+            font-weight: bold;
+            color: var(--accent-color);
+        }
+
+        .delete-button {
+            background-color: #e74c3c;
+            color: white;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 14px;
+        }
+
+        .delete-button:hover {
+            background-color: #c0392b;
+        }
+
+        /* 模态框样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 800px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .stats-panel {
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background-color: var(--card-bg);
+            box-shadow: 0 1px 3px var(--shadow-color);
+            margin-top: 15px;
+        }
+
+        .stats-panel h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: var(--accent-color);
+        }
+
+        .date-range {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .date-input {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .date-input label {
+            font-size: 17px;  /* 增加标签字体大小 */
+        }
+
+        .date-input input[type="date"] {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid var(--border-light);
+            border-radius: 4px;
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            font-size: 17px;  /* 增加输入框字体大小 */
+        }
+
+        .stats-actions {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .stats-report {
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background-color: var (--card-bg);
+            margin-top: 15px;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .panel-header button {
+            padding: 5px 10px;
+            font-size: 14px;
+        }
+
+        #statsReportPanel {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            max-width: 800px;
+            z-index: 1000;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        /* 更新模态框样式 */
+        #myModal {
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.4);
+            display: none;
+        }
+
+        #myModal .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            max-width: 800px;
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            padding: 20px;
+            color: var(--text-color);
+        }
+
+        #myModal .close {
+            color: var(--text-secondary);
+            float: right;
+            font-size: 24px;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        #myModal .close:hover {
+            color: var(--accent-color);
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="main-content">
+        <div class="header">
+            <h1>我的工作日志</h1>
+            <!-- 主题切换按钮 -->
+            <div class="theme-switch" onclick="toggleTheme()">
+                <i class="fas fa-sun"></i>
+                <i class="fas fa-moon"></i>
+            </div>
+        </div>
+        
+        <div class="container">
+            <div class="left-panel">
+                <!-- 日历组件 -->
+                <div class="calendar">
+                    <div class="calendar-header">
+                        <button onclick="prevMonth()">&lt;</button>
+                        <h2 id="currentMonth"></h2>
+                        <button onclick="nextMonth()">&gt;</button>
+                    </div>
+                    <div class="calendar-grid" id="calendarGrid"></div>
+                </div>
+
+                <!-- 添加统计功能区域 -->
+                <div class="stats-panel">
+                    <div class="date-range">
+                        <div class="date-input">
+                            <label>开始日期：</label>
+                            <input type="date" id="startDate">
+                        </div>
+                        <div class="date-input">
+                            <label>结束日期：</label>
+                            <input type="date" id="endDate">
+                        </div>
+                    </div>
+                    <div class="stats-actions">
+                        <button onclick="generateStatsReport()">生成报告</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="right-panel">
+                <!-- 输入面板 -->
+                <div class="input-panel" id="inputPanel">
+                    <h3 id="inputDate"></h3>
+                    <div>
+                        <label>基础性工作：</label>
+                        <textarea id="basicWork" placeholder="常规项目交付管理实施进展情况，包括进度、质量、合规情况管理"></textarea>
+                    </div>
+                    <div>
+                        <label>增值性工作：</label>
+                        <textarea id="valueWork" placeholder="工作过程中出现创新、复盘沉淀、牵引新商机或其他内容等"></textarea>
+                    </div>
+                    <div>
+                        <label>提升性工作：</label>
+                        <textarea id="improveWork" placeholder="学习新技术、新能力，考取相关证书"></textarea>
+                    </div>
+                    <div>
+                        <label>紧急性工作：</label>
+                        <textarea id="urgentWork" placeholder="如有紧急工作请填写"></textarea>
+                    </div>
+                    <div class="input-actions">
+                        <button onclick="saveWorkContent()">保存</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <footer class="footer">
+        <p>
+            © 2025 我的工作日志 | 
+            <a href="https://github.com/sunexe/weekly-report-generator" target="_blank">
+                <i class="fab fa-github"></i> GitHub
+            </a> |
+            <a href="#" onclick="openModal()">关于</a>
+        </p>
+    </footer>
+
+    <!-- 更新模态框结构 -->
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+            <div class="panel-header">
+                <h3>关于本程序</h3>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <div id="readmeContent"></div>
+        </div>
+    </div>
+
+    <script src="db.js"></script>
+    <script src="script.js"></script>
+    <script>
+        // 模态框操作
+        function openModal() {
+            document.getElementById("myModal").style.display = "block";
+            document.getElementById("readmeContent").innerHTML = `
+                <p>一个简单易用的工作日志管理工具，帮助您轻松管理和生成工作报告。</p>
+                <h3>功能特点</h3>
+                <ul>
+                    <li>📅 日历式界面，直观选择日期</li>
+                    <li>📝 分类记录每日工作内容
+                        <ul>
+                            <li>基础性工作</li>
+                            <li>增值性工作</li>
+                            <li>提升性工作</li>
+                            <li>紧急性工作</li>
+                        </ul>
+                    </li>
+                    <li>📊 选择起止日期生成标准格式工作报告</li>
+                    <li>🌓 支持明暗主题切换</li>
+                    <li>💾 本地数据存储，保护隐私</li>
+                </ul>
+                <h3>使用方法</h3>
+                <ol>
+                    <li>点击日历中的日期，输入当天的工作内容</li>
+                    <li>工作内容分为四类：
+                        <ul>
+                            <li>基础性工作：常规项目交付管理实施进展情况</li>
+                            <li>增值性工作：创新、复盘沉淀、新商机等</li>
+                            <li>提升性工作：学习新技术、新能力，考取证书</li>
+                            <li>紧急性工作：临时紧急任务</li>
+                        </ul>
+                    </li>
+                    <li>选择起止日期，点击生成报告，生成标准格式工作报告</li>
+                    <li>点击导出，导出已生成的报告，以文本文件格式保存。</li>
+                </ol>
+                <h3>本地开发</h3>
+                <ol>
+                    <li>克隆仓库</li>
+                    <li>使用本地服务器运行（例如 VS Code 的 Live Server 插件）</li>
+                    <li>在浏览器中访问</li>
+                </ol>
+                <h3>技术栈</h3>
+                <ul>
+                    <li>HTML5</li>
+                    <li>CSS3</li>
+                    <li>JavaScript</li>
+                    <li>IndexedDB</li>
+                </ul>
+                <h3>贡献</h3>
+                <p>欢迎提交 Issue 和 Pull Request！</p>
+            `;
+        }
+
+        function closeModal() {
+            document.getElementById("myModal").style.display = "none";
+        }
+
+    </script>
+</body>
+</html>
